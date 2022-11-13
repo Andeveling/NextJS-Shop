@@ -1,11 +1,16 @@
 import { LockClosedIcon } from '@heroicons/react/24/solid'
-import { SyntheticEvent, useRef } from 'react'
 import { yupResolver } from '@hookform/resolvers/yup'
+import { LoginDataI } from '@models/Login.model'
 import { useForm } from 'react-hook-form'
 import * as yup from 'yup'
-import { LoginDataI } from '@models/Login'
+import { useAuth } from '@hooks/useAuth'
+import { useState } from 'react'
+import { useRouter } from 'next/router'
 
 export default function LoginPage() {
+  const auth = useAuth()
+  const router = useRouter()
+  const [error, setError] = useState<string | null>(null)
   const LoginSchema = yup.object().shape({
     email: yup.string().email('introduzca un mail valido').required(),
     password: yup.string().min(6, 'minimo 6 caracteres').required('este campo es requerido'),
@@ -17,7 +22,11 @@ export default function LoginPage() {
   } = useForm<LoginDataI>({
     resolver: yupResolver(LoginSchema),
   })
-  const onSubmit = (data: LoginDataI) => console.log(data)
+  const onSubmit = (data: LoginDataI) =>
+    auth
+      ?.signIn(data)
+      .then((res) => router.push('/dashboard'))
+      .catch((e) => setError(e.message))
 
   return (
     <>
@@ -32,6 +41,7 @@ export default function LoginPage() {
             <h2 className='mt-6 text-center text-3xl font-extrabold text-gray-900'>Sign in to your account</h2>
           </div>
           <form className='mt-8 space-y-6' onSubmit={handleSubmit(onSubmit)}>
+            {error ? <p className='text-xs text-red-600 m-0 p-0 space-y-1 text-center'>{error}</p> : null}
             <input type='hidden' name='remember' defaultValue='true' />
             <div className='rounded-md shadow-sm -space-y-px'>
               <div>
